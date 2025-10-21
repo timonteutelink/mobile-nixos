@@ -1,0 +1,154 @@
+= Xiaomi Redmi Note 7 (lavender)
+
+*Status:* experimental, aligned with the postmarketOS edge baseline (kernel v6.17.4-sdm660).
+
+Lavender ships a Qualcomm SDM660 platform.  The Mobile NixOS port tracks the same mainline
+kernel configuration, DT selection, and initramfs module set that postmarketOS edge uses,
+so the first boot experience should mirror a known-good downstream distribution.  Display,
+touch, Wi-Fi, Bluetooth, modem data, sensors, audio, USB gadget, and vibration are known
+working when the matching firmware is supplied.  Camera and fingerprint remain unsupported
+on upstream kernels and suspend tuning is still in progress.
+
+== Hardware support overview
+
+The configuration is derived from `linux-postmarketos-qcom-sdm660` (edge channel).  Comparing
+against the postmarketOS device packages is the quickest way to diagnose deviations.
+
+[cols="3,6",options="header"]
+|===
+| Subsystem | Status / Notes
+
+| Display & GPU | Working (DRM/MSM + freedreno).  Panel variants are handled by bundling all
+lavender DTBs and preloading the `msm`, `panel-boe-td4320`, and `panel-novatek-nt36672a`
+modules alongside the touchscreen driver.
+
+| Touchscreen | Working via the GENI stack (`novatek_nvt_ts` for Tianma panels).  Other variants fall
+back to device tree autodetection.
+
+| Wi-Fi | Working (WCN3990 over `ath10k_snoc`).  Requires matching `firmware-5.bin` and
+`wlanmdsp.mbn` blobs from the same vendor build.
+
+| Bluetooth | Working (`hci_qca`).  Needs rampatch/NVM files under `qca/` or `qcom/bt/`.
+
+| Modem & data | Working (QRTR/QMI + IPA).  Remoteprocs for ADSP/MSS must receive the vendor
+blobs shipped with your firmware package.
+
+| Audio | Working (QDSP6 + WCD934x/WSA).  ALSA UCM profiles are imported from the
+sdm660-mainline project.
+
+| Sensors & haptics | Working (iio-sensor-proxy, qpnp-haptics, IR GPIO).
+
+| Camera / Fingerprint | Not yet supported upstream.
+|===
+
+== Building images
+
+Enable flakes and build the standard images from the Mobile NixOS checkout:
+
+[source,bash]
+----
+export NIX_CONFIG='experimental-features = nix-command flakes'
+nix build .#devices.xiaomi-lavender
+----
+
+The build produces `./result/boot.img` (kernel + initrd + DTBs) and `./result/system.img`
+(rootfs).
+
+== Personal flake example
+
+You can keep this repository pristine and build lavender from a personal flake that layers
+your desired userland services:
+
+[source,nix]
+----
+{
+  description = "Mobile NixOS lavender example";
+
+  inputs.mobile-nixos.url = "github:mobile-nixos/mobile-nixos/development";
+
+  outputs = { self, mobile-nixos }:
+    let
+      eval = import (mobile-nixos + "/lib/eval-with-configuration.nix") {
+        system = "aarch64-linux";
+        device = mobile-nixos + "/devices/xiaomi-lavender";
+        configuration = [ ./configuration.nix ];
+      };
+    in {
+      packages.aarch64-linux.default = eval.outputs.default;
+      packages.aarch64-linux.fastboot-images =
+        eval.outputs.android.android-fastboot-images;
+    };
+}
+----
+
+`configuration.nix` is where you enable Phosh, seatd, squeekboard, SSH, or any other userland
+services; the device module stays focused on boot-time configuration.
+
+== Proprietary firmware requirements
+
+Qualcomm components need blobs copied from MIUI/Lineage/postmarketOS images.  Point
+`mobile.device.firmware` at a directory that contains the firmware tree:
+
+[source,nix]
+----
+hardware.firmware = [
+  (config.mobile.device.firmware.override {
+    firmwareRoot = /absolute/path/to/firmware-tree;
+  })
+];
+----
+
+The directory (or its `lib/firmware` subdirectory) must contain at least:
+
+* `ath10k/WCN3990/hw1.0/firmware-5.bin`
+* `ath10k/WCN3990/hw1.0/board-2.bin`
+* `qcom/wlanmdsp.mbn`
+* ADSP/modem images under `qcom/` (examples: `modem.mbn`, `mba.mbn`, `adspso.bin`)
+* Bluetooth rampatch/NVM files under `qca/` or `qcom/bt/`
+
+If the derivation errors out with “Missing firmware …”, add the missing files and rebuild.
+The blob set extracted by postmarketOS' `pmbootstrap extract-firmware xiaomi-lavender` works
+unchanged.
+
+== Boot and flashing instructions
+
+1. Unlock the bootloader through Xiaomi's official process and verify that the stock
+   fastboot implementation can boot custom images.
+2. Connect the phone in fastboot mode (`power + volume down`).
+3. Verify connectivity:
++
+[source,bash]
+----
+fastboot devices
+----
+4. Test-boot the generated image:
++
+[source,bash]
+----
+fastboot boot ./result/boot.img
+----
+   Wait for the device to reach the graphical session and verify radios/audio.
+5. When satisfied, flash the images.  Lavender is an A/B device, so each command targets
+   both slots just like the postmarketOS instructions:
++
+[source,bash]
+----
+fastboot flash --slot=all boot ./result/boot.img
+fastboot flash --slot=all system ./result/system.img
+----
+6. Optionally erase userdata if you want a clean state (`fastboot erase userdata`).
+7. Reboot (`fastboot reboot`).
+
+The Mobile NixOS build embeds all lavender DTBs into `boot.img`.  Do **not** flash a separate
+DTBO; the device tree is already bundled just like on postmarketOS.
+
+== Troubleshooting hints
+
+* Wi-Fi associates only if `firmware-5.bin` and `wlanmdsp.mbn` come from the same vendor build.
+  Swap them as a pair if you see association failures after successful probing.
+* A modem that keeps restarting usually indicates missing ADSP/MSS firmware.  Pull the blobs
+  from the same MIUI/Lineage package that supplied your Wi-Fi firmware.
+* Audio routing relies on the SDM660 UCM profiles shipped with the family module.  Use
+  `pavucontrol` if call audio needs manual tweaks.
+* Compare any behaviour differences with postmarketOS edge; both projects now share the same
+  kernel revision and configuration.
