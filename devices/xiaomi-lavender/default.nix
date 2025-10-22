@@ -20,15 +20,13 @@
     };
   };
 
-  mobile.system.android = {
-    device_name = "lavender";
-    appendDTB = [
-      "dtbs/qcom/sdm660-xiaomi-lavender-boe.dtb"
-      "dtbs/qcom/sdm660-xiaomi-lavender-shenchao.dtb"
-      "dtbs/qcom/sdm660-xiaomi-lavender-tianma.dtb"
-    ];
-    flashingMethod = "fastboot";
-  };
+  mobile.system.android.device_name = "lavender";
+  mobile.system.android.appendDTB = lib.mkAfter [
+    "dtbs/qcom/sdm660-xiaomi-lavender-boe.dtb"
+    "dtbs/qcom/sdm660-xiaomi-lavender-shenchao.dtb"
+    "dtbs/qcom/sdm660-xiaomi-lavender-tianma.dtb"
+  ];
+  mobile.system.android.flashingMethod = lib.mkDefault "fastboot";
 
   mobile.boot.stage-1.kernel.modules = lib.mkAfter [
     "msm"
@@ -52,6 +50,6 @@
   mobile.device.firmware = pkgs.callPackage ./firmware { };
   mobile.device.enableFirmware = lib.mkDefault false;
 
-  services.udev.extraRules = lib.mkAfter (lib.readFile ./udev.rules);
+  services.udev.extraRules = lib.mkAfter "\n${lib.readFile ./udev.rules}";
   services.iio-sensor-proxy.enable = lib.mkDefault true;
 }

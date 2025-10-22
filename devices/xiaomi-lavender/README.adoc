@@ -57,21 +57,29 @@ The build produces `./result/boot.img` (kernel + initrd + DTBs) and `./result/sy
 == Personal flake example
 
 You can keep this repository pristine and build lavender from a personal flake that layers
-your desired userland services:
+your desired userland services.  A ready-to-copy template lives under
+`examples/device-flake`, and the <<../../doc/in-depth/flakes.adoc#,personal flake guide>>
+walks through the workflow end-to-end.  The minimal building blocks look like this:
 
 [source,nix]
 ----
 {
   description = "Mobile NixOS lavender example";
 
-  inputs.mobile-nixos.url = "github:mobile-nixos/mobile-nixos/development";
+  inputs.mobile-nixos = {
+    url = "github:mobile-nixos/mobile-nixos";
+    flake = false;
+  };
 
   outputs = { self, mobile-nixos }:
     let
       eval = import (mobile-nixos + "/lib/eval-with-configuration.nix") {
         system = "aarch64-linux";
         device = mobile-nixos + "/devices/xiaomi-lavender";
-        configuration = [ ./configuration.nix ];
+        configuration = [
+          { _module.args.mobile-nixos = mobile-nixos; }
+          ./configuration.nix
+        ];
       };
     in {
       packages.aarch64-linux.default = eval.outputs.default;

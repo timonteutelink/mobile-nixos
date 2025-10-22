@@ -1,0 +1,33 @@
+= Personal device flake example
+
+This directory contains a minimal flake that demonstrates how to build a Mobile NixOS device
+without modifying the upstream repository.  Copy the whole directory next to your checkout,
+run `nix flake init -t path/to/mobile-nixos/examples/device-flake`, or use the files here as a
+starting point for your own repository.  Refer to <<../../doc/in-depth/flakes.adoc#,
+Building device images from a personal flake>> for a step-by-step walkthrough.
+
+== Files
+
+* `flake.nix` wires the upstream device module and your configuration together.
+* `configuration.nix` enables a small userland and shows how to extend it.
+
+== Usage
+
+1. Copy this directory somewhere outside of the main Mobile NixOS checkout.
+2. Adjust the `device` attribute in `flake.nix` if you are targeting something other than the
+   Xiaomi Redmi Note 7.
+3. Edit `configuration.nix` to include the services and packages you want in the rootfs.
+4. Ensure flakes are enabled (`export NIX_CONFIG='experimental-features = nix-command flakes'`).
+5. Build the images with:
++
+[source,bash]
+----
+nix build .#fastboot-images
+----
++
+   Additional build targets are exported under the `packages` output.  Inspect `flake.nix`
+   for details.
+
+The generated artifacts appear under `./result/`.  Android-based devices receive `boot.img`
+and `system.img`, while UEFI devices expose their disk image or installer directory as
+appropriate.

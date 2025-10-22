@@ -1,0 +1,174 @@
+= Building device images from a personal flake
+include::_support/common.inc[]
+
+Many users prefer to keep their Mobile NixOS checkouts untouched and experiment in a
+separate repository.  Flakes make this workflow reliable and reproducible.  This page walks
+through the recommended structure, explains the helper functions shipped with
+`mobile-nixos`, and demonstrates how to integrate your own device configuration.
+
+== Prerequisites
+
+Before you begin, make sure that:
+
+* Nix is installed with flakes and the `nix-command` feature enabled.  Either set
+  `experimental-features = nix-command flakes` in `/etc/nix/nix.conf`, or export the
+  `NIX_CONFIG` environment variable before running the examples below.
+* You have a clone of the `mobile-nixos` repository somewhere on your system.  The
+  examples assume the clone sits next to your personal flake but it can live anywhere.
+* Your device is already supported by Mobile NixOS or you have written a device module
+  following the guidance in the <<../porting-guide.adoc#,porting guide>>.
+
+== Directory layout
+
+A minimal personal flake that builds a device image only needs two files:
+
+```
+my-mobile-device/
+├── configuration.nix
+└── flake.nix
+```
+
+`configuration.nix` contains all of the userland services that you want baked into the
+system image (Phosh, Plasma Mobile, SSH, custom services, and so on).  `flake.nix` wires
+that configuration to the Mobile NixOS evaluation helpers so that Nix can build bootable
+artifacts.
+
+The repository ships with a ready-to-use template under
+`examples/device-flake`.  Copy that directory next to your checkout and adjust the
+options there to taste.  The sections below describe the important pieces in more detail.
+
+== The flake.nix file
+
+A basic `flake.nix` combines your configuration with the official device module:
+
+[source,nix]
+----
+{
+  description = "Mobile NixOS personal device";
+
+  inputs.mobile-nixos = {
+    url = "github:mobile-nixos/mobile-nixos";
+    flake = false;
+  };
+
+  outputs = { self, mobile-nixos, ... }:
+    let
+      evalWithConfiguration = import (mobile-nixos + "/lib/eval-with-configuration.nix");
+      target = {
+        system = "aarch64-linux";                # Host architecture for the device build
+        device = mobile-nixos + "/devices/xiaomi-lavender"; # Path to the device module
+        configuration = [
+          { _module.args.mobile-nixos = mobile-nixos; }
+          ./configuration.nix
+        ];
+      };
+      eval = evalWithConfiguration target;
+    in {
+      packages.${target.system} = {
+        default = eval.outputs.default;            # Convenience alias for nix build
+        fastboot-images = eval.outputs.android.android-fastboot-images;
+        installer = eval.outputs.installer.default or null;
+      };
+    };
+}
+----
+
+* `system` must match the architecture of the device images you are building.  Use
+  `aarch64-linux` for modern ARM devices and `x86_64-linux` for UEFI-based laptops and
+  tablets.
+* `device` points to the Mobile NixOS module you want to reuse.  You can also point this at
+  a directory in your own flake if you maintain a forked module.
+* `configuration` is a list, making it easy to append several configuration fragments (for
+  example `./configuration.nix` plus `./services/ssh.nix`).
+* The first entry in `configuration` injects the `mobile-nixos` path into every module as a
+  special argument so that you can reference helper modules shipped with the project.
+
+The helper `evalWithConfiguration` returns the same attrset as `nix build .#devices.…`
+would inside the Mobile NixOS repository.  Exposing the interesting entries under
+`packages` makes it straightforward to build:
+
+```
+nix build .#fastboot-images
+```
+
+== Writing configuration.nix
+
+Your `configuration.nix` can use any standard NixOS options in addition to the Mobile
+NixOS module options.  A small but complete example looks like this:
+
+[source,nix]
+----
+{ lib, pkgs, mobile-nixos, ... }:
+{
+  imports = [
+    (mobile-nixos + "/examples/common-configuration.nix")  # Shared upstream defaults
+  ];
+
+  mobile.system.stateVersion = "24.05";
+
+  # Enable a graphical shell.
+  mobile.users.defaultUser = "nixos";
+  users.users.nixos.isNormalUser = true;
+  services.phosh.enable = true;
+  services.squeekboard.enable = true;
+
+  # Enable remote access during development.
+  services.openssh = {
+    enable = true;
+    settings.PasswordAuthentication = false;
+  };
+  users.users.nixos.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAA…"
+  ];
+
+  # Any extra packages that should be present in the rootfs.
+  environment.systemPackages = with pkgs; [
+    git
+    vim
+  ];
+
+  # Fine tune stage-1 if needed.
+  mobile.boot.stage-1.splash.enable = lib.mkDefault false;
+}
+----
+
+Refer to the device's README in `devices/<vendor>-<codename>/README.adoc` for quirks or
+mandatory firmware requirements.
+
+== Building from the flake
+
+Once the files are in place:
+
+. Enable flakes (`export NIX_CONFIG='experimental-features = nix-command flakes'`) if
+  necessary.
+. Change into your personal flake directory.
+. Build the desired target:
++
+[source,bash]
+----
+nix build .#fastboot-images
+----
++
+  or build the full default package which mirrors `nix build .#devices.<name>` inside the
+  Mobile NixOS tree.
+. Find the resulting images under `./result/`.  For Android devices this includes
+  `boot.img` and `system.img`.  For UEFI devices expect an `img/` directory or installer
+  artifacts, depending on the device family.
+
+== Keeping mobile-nixos up-to-date
+
+Because the flake input points at the upstream repository, updating is just a matter of
+running `nix flake update`.  Pinning `mobile-nixos` to a tag or a specific commit gives you
+reproducible builds; following the default branch keeps you on the latest development
+snapshot.
+
+== Troubleshooting tips
+
+* When Nix fails to evaluate the flake, double-check that the `device` path is correct and
+  that the referenced directory contains a `default.nix` file.
+* Firmware-related build failures usually stem from missing blobs.  Override
+  `config.mobile.device.firmware` (or `config.hardware.firmware`) inside your
+  `configuration.nix` to point at a directory containing the required files.  Device
+  READMEs document the expected paths.
+* Use `nix develop` from inside the Mobile NixOS checkout if you need the project-specific
+  CLI helpers while working in your personal flake.
