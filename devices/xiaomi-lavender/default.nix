@@ -51,5 +51,4 @@
   mobile.device.enableFirmware = lib.mkDefault false;
 
   services.udev.extraRules = lib.mkAfter "\n${lib.readFile ./udev.rules}";
-  services.iio-sensor-proxy.enable = lib.mkDefault true;
 }
