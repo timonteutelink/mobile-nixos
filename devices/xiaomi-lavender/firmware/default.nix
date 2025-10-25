@@ -1,5 +1,6 @@
 { lib
 , stdenvNoCC
+, pkgs
 , firmwareRoot ? ""
 }:
 
@@ -9,7 +10,7 @@ stdenvNoCC.mkDerivation {
 
   dontUnpack = true;
   installPhase = ''
-    if [ -z "$firmwareRoot" ]; then
+    if [ -z "${firmwareRoot}" ]; then
       cat >&2 <<'MSG'
 Provide the proprietary lavender firmware by overriding
   config.mobile.device.firmware.override { firmwareRoot = /absolute/path; }
@@ -18,11 +19,19 @@ MSG
     fi
 
     mkdir -p $out/lib/firmware
-    if [ -d "$firmwareRoot/lib/firmware" ]; then
-      cp -a "$firmwareRoot/lib/firmware/." $out/lib/firmware/
+
+    # 1) Copy only your proprietary blobs from firmwareRoot
+    if [ -d "${firmwareRoot}/lib/firmware" ]; then
+      cp -a "${firmwareRoot}/lib/firmware/." $out/lib/firmware/
     else
-      cp -a "$firmwareRoot/." $out/lib/firmware/
+      cp -a "${firmwareRoot}/." $out/lib/firmware/
     fi
+
+    chmod -R u+w $out/lib/firmware
+
+    # 2) Provide ath10k WCN3990 from linux-firmware (redistributable)
+    mkdir -p $out/lib/firmware/ath10k
+    cp -a ${pkgs.linux-firmware}/lib/firmware/ath10k/WCN3990 $out/lib/firmware/ath10k/
   '';
 
   postInstall = ''
@@ -51,3 +60,11 @@ MSG
     license = with lib.licenses; [ unfree ];
   };
 }
+
+
+#nix build --impure --expr '
+#  let pkgs = import <nixpkgs> {};
+#  in pkgs.callPackage ./devices/xiaomi-lavender/firmware {
+#    firmwareRoot = /home/tteutelink/projects/timon/nixos-phone/data/xiaomi-redmi-note-7/extracted;
+#  }
+#'
