@@ -5,7 +5,7 @@
 
 let
   rev = "v6.17.4-sdm660";
-  sha256 = "sha256-UzZbsQLXASZrp/UGEyE7oQTvVldB85AoT0b+stw1A+Y=";
+  sha256 = "sha256-yRoAMA17fLNU5sQQg2tOhdjj+nu8FmmsoyaGZJq4yjY=";
 in
 mobile-nixos.kernel-builder {
   version = "6.17.4";
