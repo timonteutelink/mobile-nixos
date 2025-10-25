@@ -65,6 +65,6 @@ MSG
 #nix build --impure --expr '
 #  let pkgs = import <nixpkgs> {};
 #  in pkgs.callPackage ./devices/xiaomi-lavender/firmware {
-#    firmwareRoot = /home/tteutelink/projects/timon/nixos-phone/data/xiaomi-redmi-note-7/extracted;
+#    firmwareRoot = /home/tteutelink/projects/timon/nixos-phone/data/xiaomi-redmi-note-7;
 #  }
 #'
