@@ -57,7 +57,7 @@ MSG
 
   meta = {
     description = "Proprietary firmware bundle for Xiaomi Redmi Note 7 (lavender)";
-    license = with lib.licenses; [ unfree ];
+    # license = with lib.licenses; [ unfree ];
   };
 }
 
