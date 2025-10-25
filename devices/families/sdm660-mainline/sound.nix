@@ -11,7 +11,7 @@
             owner = "sdm660-mainline";
             repo = "alsa-ucm-conf";
             rev = "75c52fd064005c8bae3bec4fed22fa3638e7f63a";
-            sha256 = "sha256-zPihFcwcatsjGsFZS5b4bzqvsQPq4ilwgRuVHvzZpQw=";
+            sha256 = "sha256-23iPizJsezVcVwIYLPgSulM31Cq+TmAz6tnvMsI7FXM=";
           };
         } ''
           mkdir -p $out/share/
