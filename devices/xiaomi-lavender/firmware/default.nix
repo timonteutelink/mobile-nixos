@@ -34,6 +34,13 @@ MSG
     # 2) Provide ath10k WCN3990 from linux-firmware (redistributable)
     mkdir -p $out/lib/firmware/ath10k
     cp -a ${pkgs.linux-firmware}/lib/firmware/ath10k/WCN3990 $out/lib/firmware/ath10k/
+
+    # 3) Ensure the IPA firmware is available; upstream ships a redistributable copy.
+    mkdir -p $out/lib/firmware/qcom
+    if [ ! -e "$out/lib/firmware/qcom/ipa_fws.mbn" ]; then
+      install -Dm444 ${pkgs.linux-firmware}/lib/firmware/qcom/ipa_fws.mbn \
+        $out/lib/firmware/qcom/ipa_fws.mbn
+    fi
   '';
 
   postInstall = ''
@@ -47,6 +54,7 @@ MSG
     need "ath10k/WCN3990/hw1.0/firmware-5.bin"
     need "ath10k/WCN3990/hw1.0/board-2.bin"
     need "qcom/wlanmdsp.mbn"
+    need "qcom/ipa_fws.mbn"
 
     if ! ls "$fwroot"/qca/*.tlv "$fwroot"/qca/*.bin "$fwroot"/qcom/bt/* >/dev/null 2>&1; then
       echo "Warning: Bluetooth rampatch/NVM files not found under qca/ or qcom/bt/." >&2
