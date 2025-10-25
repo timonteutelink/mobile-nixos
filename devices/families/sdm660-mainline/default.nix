@@ -19,7 +19,10 @@
   mobile.boot.stage-1.firmware =
     lib.optional config.mobile.device.enableFirmware
       (pkgs.runCommand "initrd-firmware" {} ''
-        cp -vrf ${config.mobile.device.firmware} $out
+        mkdir -p $out/lib/firmware
+
+        cp -vr ${config.mobile.device.firmware}/lib/firmware/. $out/lib/firmware/
+
         chmod -R +w $out
         rm -vf $out/lib/firmware/qcom/sdm660/*/modem*.mbn || true
       '');
