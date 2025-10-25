@@ -61,6 +61,17 @@ in
         Support level for the device.
       '';
     };
+
+    firmwareRoot = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = ''
+        Optional path to a directory containing proprietary firmware blobs for the
+        current device.  Device modules that package firmware can use this to
+        automatically forward a `firmwareRoot` argument instead of requiring
+        the configuration to override the derivation manually.
+      '';
+    };
   };
 
   config = mkMerge [

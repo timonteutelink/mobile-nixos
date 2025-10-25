@@ -1,5 +1,8 @@
 { config, lib, pkgs, ... }:
 
+let
+  deviceCfg = config.mobile.device;
+in
 {
   imports = [
     ../families/sdm660-mainline
@@ -47,7 +50,11 @@
     "phy_qcom_qusb2"
   ];
 
-  mobile.device.firmware = pkgs.callPackage ./firmware { };
+  mobile.device.firmware = pkgs.callPackage ./firmware (
+    lib.optionalAttrs (deviceCfg.firmwareRoot != null) {
+      firmwareRoot = deviceCfg.firmwareRoot;
+    }
+  );
   mobile.device.enableFirmware = lib.mkDefault false;
 
   services.udev.extraRules = lib.mkAfter "\n${lib.readFile ./udev.rules}";

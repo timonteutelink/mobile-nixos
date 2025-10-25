@@ -12,7 +12,9 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     if [ -z "${firmwareRoot}" ]; then
       cat >&2 <<'MSG'
-Provide the proprietary lavender firmware by overriding
+Provide the proprietary lavender firmware by setting
+  mobile.device.firmwareRoot = /absolute/path;
+or overriding
   config.mobile.device.firmware.override { firmwareRoot = /absolute/path; }
 MSG
       exit 1
