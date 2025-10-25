@@ -17,7 +17,8 @@
   hardware.enableRedistributableFirmware = true;
 
   mobile.boot.stage-1.firmware =
-    lib.optional config.mobile.device.enableFirmware
+    # Only bundle firmware into the initrd when a path is provided.
+    lib.optional (config.mobile.device.enableFirmware && config.mobile.device.firmware != null)
       (pkgs.runCommand "initrd-firmware" {} ''
         mkdir -p $out/lib/firmware
 
