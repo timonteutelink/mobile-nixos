@@ -88,6 +88,10 @@ affect the stage-2 (rootfs, system.img) build.
 The <<options/index.adoc#,Options list>> page will be useful, as it provides an
 overview of all the Mobile NixOS specific options.
 
+If you prefer to keep local changes outside of the project checkout, follow the
+<<in-depth/flakes.adoc#,personal flake guide>> and the `examples/device-flake` template to
+build fully customized images from your own repository.
+
 
 == Using in your system configuration
 

@@ -15,6 +15,10 @@ Index of in-depth topics.
 
 * <<devices.adoc#,Devices>>
 
+== Configuration Workflows
+
+* <<flakes.adoc#,Building device images from a personal flake>>
+
 == Android-Based Devices
 
 * <<android/partitions.adoc#,Partitions>>

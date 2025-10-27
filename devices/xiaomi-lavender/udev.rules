@@ -1,0 +1,10 @@
+# Xiaomi Redmi Note 7 specific tweaks
+
+SUBSYSTEM=="usb", ENV{ID_VENDOR_ID}=="18d1", MODE="0660", GROUP="plugdev"
+
+KERNEL=="lirc*", MODE="0660", GROUP="video"
+KERNEL=="ir-*" , MODE="0660", GROUP="video"
+
+SUBSYSTEM=="iio", GROUP="input", MODE="0640"
+
+SUBSYSTEM=="net", KERNEL=="rmnet*", MODE="0660", GROUP="network"
