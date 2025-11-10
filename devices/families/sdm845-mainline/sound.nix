@@ -12,7 +12,7 @@
       };
     } ''
       mkdir -p $out/share/
-      ln -s $src $out/share/alsa
+      ln -s ${src} $out/share/alsa
     ''
   ) {};
 in {
