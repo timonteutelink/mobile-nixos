@@ -1,8 +1,6 @@
 { config, lib, pkgs, ... }: let
   sdm845-alsa-ucm = pkgs.callPackage (
-    { runCommand, fetchFromGitLab }:
-
-    runCommand "sdm845-alsa-ucm" {
+    { runCommand, fetchFromGitLab }: let
       src = fetchFromGitLab {
         name = "sdm845-alsa-ucm";
         owner = "sdm845-mainline";
@@ -10,7 +8,7 @@
         rev = "de81252f28465fb76e2aa58eb9733b88de2076ea"; # sdm845-phones
         sha256 = "sha256-CgAPg0UUAJUE1gD59l2GNDx3h9crAato6O/dDJpRwiY=";
       };
-    } ''
+    in runCommand "sdm845-alsa-ucm" {} ''
       mkdir -p $out/share/
       ln -s ${src} $out/share/alsa
     ''
