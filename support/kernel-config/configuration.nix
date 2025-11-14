@@ -401,7 +401,6 @@ in
       SND = yes;
       SOUND = yes;
       USB = yes;
-      ETHERNET = no;
       RC_CORE = no;
     })
 
