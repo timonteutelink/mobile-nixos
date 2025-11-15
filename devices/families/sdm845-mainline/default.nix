@@ -75,12 +75,12 @@
     '';
 
     extraHwdb = lib.mkAfter ''
-      evdev:name:SynPS/2 RMI4*
+      evdev:name:SynPS/2 RMI4*:dmi:*
         ID_INPUT_KEYBOARD=0
 
-      evdev:name:SynPS/2 Synaptics TouchPad*
-       ID_INPUT_KEYBOARD=0
+      evdev:name:SynPS/2 Synaptics TouchPad*:dmi:*
+        ID_INPUT_KEYBOARD=0
     '';
-
   };
+
 }
