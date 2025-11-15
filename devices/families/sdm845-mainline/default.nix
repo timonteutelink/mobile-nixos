@@ -68,10 +68,18 @@
   services.udev = {
     extraRules = ''
       SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="pmi8998_haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+
+      SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="Hall effect sensor", ENV{ID_INPUT_SWITCH}="1", ENV{ID_INPUT_KEYBOARD}="0", ENV{ID_INPUT_KEY}="0"
+      SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="gpio-keys", ENV{ID_INPUT_SWITCH}="1", ENV{ID_INPUT_KEYBOARD}="0", ENV{ID_INPUT_KEY}="0"
+      SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="Volume keys", ENV{ID_INPUT_SWITCH}="1", ENV{ID_INPUT_KEYBOARD}="0", ENV{ID_INPUT_KEY}="0"
     '';
+
     extraHwdb = lib.mkAfter ''
       evdev:name:SynPS/2 RMI4*
         ID_INPUT_KEYBOARD=0
+
+      evdev:name:SynPS/2 Synaptics TouchPad*
+       ID_INPUT_KEYBOARD=0
     '';
 
   };
