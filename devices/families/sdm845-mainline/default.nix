@@ -65,7 +65,14 @@
 
   mobile.quirks.qualcomm.sdm845-modem.enable = true;
 
-  services.udev.extraRules = ''
-    SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="pmi8998_haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
-  '';
+  services.udev = {
+    extraRules = ''
+      SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", SUBSYSTEMS=="input", ATTRS{name}=="pmi8998_haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
+    '';
+    extraHwdb = lib.mkAfter ''
+      evdev:name:SynPS/2 RMI4*
+        ID_INPUT_KEYBOARD=0
+    '';
+
+  };
 }
